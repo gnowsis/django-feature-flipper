@@ -7,6 +7,4 @@ def features(request):
     """
     Returns context variables required by apps that use featureflipper.
     """
-    return {
-        'features': request.features
-    }
+    return {'features': getattr(request,'features',None)}
