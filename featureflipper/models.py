@@ -1,5 +1,5 @@
 from django.db import models
-
+from functools import wraps
 
 class Feature(models.Model):
     name = models.CharField(max_length=40, db_index=True, unique=True,
@@ -24,7 +24,17 @@ class Feature(models.Model):
         permissions = (
             ("can_flip_with_url", "Can flip features using URL parameters"),
         )
-    
+
     @property
     def status(self):
         return "enabled" if self.enabled else "disabled"
+
+def enable_features(features = []):
+    """Make sure all features required for test are enabled on site level."""
+    def outter_wrapper(f):
+        @wraps(f)
+        def wrapper(self, *args, **kwargs):
+            Feature.objects.filter(name__in = features).update(enabled=True)
+            return f(self, *args, **kwargs)
+        return wrapper
+    return outter_wrapper

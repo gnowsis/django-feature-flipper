@@ -5,20 +5,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 
-from featureflipper.models import Feature
+from featureflipper.models import Feature, enable_features
 from featureflipper.middleware import FeaturesMiddleware
-
-from functools import wraps
-
-def enable_features(features = []):
-    """Make sure all features required for test are enabled on site level."""
-    def outter_wrapper(f):
-        @wraps(f)
-        def wrapper(self, *args, **kwargs):
-            Feature.objects.filter(name__in = features).update(enabled=True)
-            return f(self, *args, **kwargs)
-        return wrapper
-    return outter_wrapper
 
 class FeatureFlipperTest(TestCase):
     """
