@@ -91,5 +91,8 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'featureflipper'
+    'featureflipper',
+    'test_app',
 )
+
+AUTH_PROFILE_MODULE = "test_app.UserProfile"

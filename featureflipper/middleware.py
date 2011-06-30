@@ -16,7 +16,24 @@ _SESSION_ENABLE = re.compile("^session_enable_(?P<feature>\w+)$")
 _FEATURE_STATUS = re.compile("^feature_status_(?P<feature>\w+)$")
 
 
-class FeaturesMiddleware(object):
+
+class FeaturesDetector(object):
+
+    def get_features(self, user = None):
+        panel = FeaturesPanel()
+        panel.add('site', list(self.features_from_database(None)))
+
+        if user:
+            for plugin in FeatureProvider.plugins:
+                panel.add(plugin.source, list(plugin.features(user)))
+        return FeatureDict(panel.states()), panel
+
+    def features_from_database(self, request):
+        """Provides an iterator yielding tuples (feature name, True/False)"""
+        for feature in Feature.objects.all():
+            yield (feature.name, feature.enabled)
+
+class FeaturesMiddleware(FeaturesDetector):
 
     def process_request(self, request):
         panel = FeaturesPanel()
@@ -39,11 +56,6 @@ class FeaturesMiddleware(object):
         request.features_panel = panel
 
         return None
-
-    def features_from_database(self, request):
-        """Provides an iterator yielding tuples (feature name, True/False)"""
-        for feature in Feature.objects.all():
-            yield (feature.name, feature.enabled)
 
     def features_from_session(self, request):
         """Provides an iterator yielding tuples (feature name, True/False)"""
@@ -78,7 +90,6 @@ class FeaturesMiddleware(object):
         for key in session.keys():
             if re.match(_FEATURE_STATUS, key):
                 del session[key]
-
 
 class FeatureDict(dict):
 

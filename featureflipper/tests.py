@@ -4,9 +4,12 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
+from django.db import models
+from django.conf import settings
+
 
 from featureflipper.models import Feature, enable_features
-from featureflipper.middleware import FeaturesMiddleware
+from featureflipper.middleware import FeaturesDetector, FeaturesMiddleware
 
 class FeatureFlipperTest(TestCase):
     """
@@ -57,6 +60,23 @@ class FeatureFlipperTest(TestCase):
 
         response = self.client.get('/?session_clear_features')
         self.assertFalse(response.context['features']['fftestfeature'])
+
+
+    def test_features_on_user_only_basis(self):
+        """Pass only user to detect features
+        Only Global and userprofile settings are considered"""
+
+        features , feature_panel= FeaturesDetector().get_features(self.user)
+        #assert disbaled
+        self.assertFalse(features["fftestfeature"])
+
+        up_class = models.get_model(*settings.AUTH_PROFILE_MODULE.rsplit(".", 1))
+        up = up_class.objects.create(user = self.user)
+        up.features_enabled = "fftestfeature"
+        up.save()
+        #assert enabled
+        features, feature_panel = FeaturesDetector().get_features(self.user)
+        self.assertTrue(features["fftestfeature"])
 
 
     def test_no_deco(self):
