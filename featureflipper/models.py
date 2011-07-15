@@ -29,12 +29,28 @@ class Feature(models.Model):
     def status(self):
         return "enabled" if self.enabled else "disabled"
 
-def enable_features(features = []):
+def enable_features(features = [], raise_error_on_missing=True):
     """Make sure all features required for test are enabled on site level."""
     def outter_wrapper(f):
         @wraps(f)
         def wrapper(self, *args, **kwargs):
+            if( raise_error_on_missing and
+                len(features) != Feature.objects.filter(name__in = features).count()):
+                raise RuntimeError("Trying to enable not existing features!!!")
             Feature.objects.filter(name__in = features).update(enabled=True)
+            return f(self, *args, **kwargs)
+        return wrapper
+    return outter_wrapper
+
+def disable_features(features = [], raise_error_on_missing=True):
+    """Make sure all features required for test are disabled on site level."""
+    def outter_wrapper(f):
+        @wraps(f)
+        def wrapper(self, *args, **kwargs):
+            if(raise_error_on_missing
+               and len(features) != Feature.objects.filter(name__in = features).count()):
+                raise RuntimeError("Trying to disable not existing features!!!")
+            Feature.objects.filter(name__in = features).update(enabled=False)
             return f(self, *args, **kwargs)
         return wrapper
     return outter_wrapper
