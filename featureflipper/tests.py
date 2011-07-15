@@ -8,7 +8,7 @@ from django.db import models
 from django.conf import settings
 
 
-from featureflipper.models import Feature, enable_features
+from featureflipper.models import Feature, enable_features, disable_features
 from featureflipper.middleware import FeaturesDetector, FeaturesMiddleware
 
 class FeatureFlipperTest(TestCase):
@@ -18,6 +18,8 @@ class FeatureFlipperTest(TestCase):
     def setUp(self):
 
         self.feature = Feature.objects.create(name='fftestfeature')
+        self.feature_enabled = Feature.objects.create(name='fftestfeature_enabled', enabled = True)
+
         self.user = User.objects.create_user('fftestuser', '', 'password')
 
         self.client = Client()
@@ -81,6 +83,27 @@ class FeatureFlipperTest(TestCase):
 
     def test_no_deco(self):
         self.assertFalse(Feature.objects.get(name='fftestfeature').enabled)
+        self.assertTrue(Feature.objects.get(name='fftestfeature_enabled').enabled)
+
     @enable_features(["fftestfeature"])
     def test_anable_feature_decorator(self):
         self.assertTrue(Feature.objects.get(name='fftestfeature').enabled)
+
+    @disable_features(['fftestfeature_enabled'])
+    def test_anable_feature_decorator(self):
+        self.assertFalse(Feature.objects.get(id = self.feature_enabled.id).enabled)
+
+
+    def test_decorators_raise_errors(self):
+        """If features does not exist decorators raise errors"""
+
+        class A:
+            @enable_features(["fftestfeature_not_existing"])
+            def enable_not_existing(self):
+                pass
+            @disable_features(["fftestfeature_not_existing"])
+            def disable_not_existing():
+                pass
+        a = A()
+        self.assertRaises(RuntimeError, a.enable_not_existing)
+        self.assertRaises(RuntimeError, a.disable_not_existing)
