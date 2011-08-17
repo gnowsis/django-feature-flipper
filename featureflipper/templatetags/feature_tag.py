@@ -37,7 +37,7 @@ class FeatureNode(template.Node):
         self.nodelist_disabled = nodelist_disabled
 
     def render(self, context):
-        if context['features'][self.feature]:
+        if context['features'] and context['features'][unicode(self.feature)]:
             return self.nodelist_enabled.render(context)
         else:
             return self.nodelist_disabled.render(context)
