@@ -9,6 +9,9 @@ from featureflipper.models import Feature
 
 def load_data(sender, **kwargs):
     # This doesn't respect syncdb's verbosity option
-    call_command('loadfeatures', interactive=False)
+    if getattr(settings, 'TESTING', None):
+        call_command('loadfeatures', interactive=False, verbosity=0)
+    else:
+        call_command('loadfeatures', interactive=False)
         
 post_syncdb.connect(load_data, sender=featureflipper_app)
